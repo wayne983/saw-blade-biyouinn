@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAWER 鋸片醫生診療系統 | 處方鋸片快速診斷</title>
+    <style>
+        /* --- 基礎造型與品牌風格 --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-top: 5px solid #004488; /* HAWER 品牌色 */
+            border-radius: 8px;
+        }
+        h1 {
+            color: #004488;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .section-title {
+            color: #444;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            padding: 5px 0;
+            border-left: 5px solid #ffcc00; /* 亮黃色作為重點標示 */
+            padding-left: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* --- 表單元素造型 --- */
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        input[type="text"], input[type="email"], input[type="number"], textarea, select {
+            width: 98%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: #004488;
+            outline: none;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .checkbox-group label {
+            display: inline-block;
+            margin-right: 15px;
+            font-weight: normal;
+        }
+
+        /* --- 按鈕造型 --- */
+        button {
+            background-color: #004488;
+            color: white;
+            padding: 12px 20px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #003366;
+        }
+
+        /* --- 訊息提示區 --- */
+        #message-area {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .success {
+            background-color: #e6ffe6;
+            color: #008000;
+            border: 1px solid #008000;
+        }
+        .error {
+            background-color: #ffe6e6;
+            color: #ff0000;
+            border: 1px solid #ff0000;
+        }
+        .loading {
+            background-color: #f0f8ff;
+            color: #004488;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="border: none;">HAWER 鋸片醫生診療系統</h1>
+        <p>感謝您對鋸片醫生的信任，請提供以下資訊，我們將為您開立專屬【處方鋸片】。</p>
+    </div>
+
+    <form id="diagnosisForm">
+
+        <div class="section-title">I. 聯絡資訊 (診斷報告寄送)</div>
+        <label for="name">姓名 / 公司名稱:</label>
+        <input type="text" id="name" required>
+
+        <label for="email">聯絡 Email:</label>
+        <input type="email" id="email" required>
+
+        <label for="phone">聯絡電話:</label>
+        <input type="text" id="phone">
+
+        <div class="section-title">II. 目前使用鋸片規格</div>
+        <label for="outerDiameter">鋸片外徑 (D, mm):</label>
+        <input type="number" id="outerDiameter" required>
+
+        <label for="teethCount">鋸片齒數 (T):</label>
+        <input type="number" id="teethCount" required>
+
+        <label for="kerf">齒厚 / 切幅 (Kerf, mm):</label>
+        <input type="text" id="kerf" placeholder="例如：3.2">
+
+        <label for="brand">目前使用鋸片品牌:</label>
+        <input type="text" id="brand">
+
+
+        <div class="section-title">III. 機台與切削物描述</div>
+        <label for="rpm">機台轉速 (RPM):</label>
+        <input type="number" id="rpm" placeholder="例如：4500">
+        
+        <label for="material">切削物材質:</label>
+        <input type="text" id="material" required placeholder="例如：AL6061-T6 鋁合金、蜂巢鋁">
+
+        <label for="thickness">切削物厚度或壁厚 (H, mm):</label>
+        <input type="text" id="thickness" required placeholder="例如：50mm (塊材) 或 3mm (管材壁厚)">
+        
+        <label for="type">切削物型態:</label>
+        <select id="type" required>
+            <option value="">-- 請選擇 --</option>
+            <option value="pipe">管材</option>
+            <option value="bar">棒材/實心條</option>
+            <option value="plate">板材（薄）</option>
+            <option value="block">塊材/鑄件（厚）</option>
+            <option value="composite">特殊複合材/蜂巢材</option>
+        </select>
+
+        <label>潤滑/冷卻方式:</label>
+        <div class="checkbox-group">
+            <label><input type="checkbox" name="lubrication" value="oil"> 切削油 / 乳化液</label>
+            <label><input type="checkbox" name="lubrication" value="mist"> 油霧潤滑</label>
+            <label><input type="checkbox" name="lubrication" value="wax"> 潤滑蠟 / 肥皂</label>
+            <label><input type="checkbox" name="lubrication" value="none"> 無潤滑 (乾切)</label>
+        </div>
+
+
+        <div class="section-title">IV. 困擾描述與視覺資料 (輔助診斷)</div>
+        <label for="problemDesc">鋸片使用困擾描述 (例如：壽命短、黏屑、毛邊大):</label>
+        <textarea id="problemDesc" required></textarea>
+
+        <label for="fileLink">照片/影片連結 (如 Google Drive 或 Imgur 連結):</label>
+        <input type="text" id="fileLink" placeholder="請提供照片/影片連結，將大幅提高診斷準確度">
+
+        <button type="submit" id="submitButton">🤖 提交資料並獲取 AI 診斷報告</button>
+    </form>
+    
+    <div id="message-area"></div>
+</div>
+
+<script>
+    // ** 請務必替換成您部署後的 Google Apps Script Web App 網址 **
+    const GAS_WEB_APP_URL = '貼上您部署後的 GAS Web App 網址，網址結尾應為 /exec 或 /dev'; 
+
+    document.getElementById('diagnosisForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const messageArea = document.getElementById('message-area');
+        const submitButton = document.getElementById('submitButton');
+
+        // 檢查 GAS URL 是否已替換
+        if (GAS_WEB_APP_URL.includes('貼上您部署後的 GAS Web App 網址')) {
+            messageArea.className = 'error';
+            messageArea.innerHTML = '<strong>程式錯誤：</strong>請聯繫您的開發人員，替換程式碼中的 GAS_WEB_APP_URL。';
+            return;
+        }
+
+        // 收集潤滑方式
+        const lubricationChecks = document.querySelectorAll('input[name="lubrication"]:checked');
+        const lubricationValues = Array.from(lubricationChecks).map(cb => cb.value);
+
+        // 收集表單數據
+        const formData = {
+            ClientName: document.getElementById('name').value,
+            Email: document.getElementById('email').value,
+            Phone: document.getElementById('phone').value,
+            OuterDiameter: document.getElementById('outerDiameter').value,
+            TeethCount: document.getElementById('teethCount').value,
+            Kerf: document.getElementById('kerf').value,
+            Brand: document.getElementById('brand').value,
+            RPM: document.getElementById('rpm').value,
+            Material: document.getElementById('material').value,
+            Thickness: document.getElementById('thickness').value,
+            Type: document.getElementById('type').value,
+            Lubrication: lubricationValues, // 傳送陣列
+            ProblemDesc: document.getElementById('problemDesc').value,
+            FileLink: document.getElementById('fileLink').value
+        };
+
+        // 顯示載入中
+        messageArea.className = 'loading';
+        messageArea.innerHTML = '<strong>診斷進行中...</strong> 請稍候，AI 醫生正在分析數據並準備報告...';
+        submitButton.disabled = true;
+
+        try {
+            const response = await fetch(https://script.google.com/macros/s/AKfycbxgiaOTv1sdEqWOK59YSkzsZvW1vjeu_EwMVcDVm4XG8lEFNSgMfAiuYy2_CoDG4GS6vQ/exec, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP 錯誤：狀態碼 ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                messageArea.className = 'success';
+                messageArea.innerHTML = `
+                    <strong>✅ 提交成功！</strong>
+                    診斷報告已寄送至您的信箱：${formData.Email}。<br>
+                    請立即檢查您的信箱 (包含垃圾郵件)。<br>
+                    <a href="https://lin.ee/6XPlLiM" target="_blank" style="color: #008000; font-weight: bold;">點此聯繫 HAWER 專人進行精準報價 (推薦)</a>
+                `;
+                document.getElementById('diagnosisForm').reset(); // 清空表單
+            } else {
+                messageArea.className = 'error';
+                messageArea.innerHTML = `<strong>系統錯誤：</strong>無法完成診斷。錯誤訊息：${result.message || '未知錯誤'}。請稍後重試或直接來電 06-2305390。`;
+            }
+
+        } catch (error) {
+            console.error('Fetch Error:', error);
+            messageArea.className = 'error';
+            messageArea.innerHTML = `<strong>連線失敗：</strong>無法連線至診斷伺服器。請確認 Web App 網址正確或稍後再試。錯誤訊息：${error.message}`;
+        } finally {
+            submitButton.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>
