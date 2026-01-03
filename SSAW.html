@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鋸片診斷與自我檢測報告系統</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#0d9488', 
+                        'secondary': '#0f766e',
+                        'accent': '#fbbf24', 
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Noto+Sans+TC:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f3ff6;
+        }
+        .submit-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        /* Markdown 樣式渲染 */
+        #reportContent h3 {
+            font-weight: bold;
+            font-size: 1.125rem; 
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #1f2937; 
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 5px;
+        }
+        #reportContent ul, #reportContent ol {
+            padding-left: 1.5rem;
+            list-style-type: disc;
+            margin-top: 0.5rem;
+        }
+        #reportContent ul li, #reportContent ol li {
+            margin-bottom: 0.25rem;
+        }
+        #reportContent p {
+            margin-bottom: 0.5rem;
+        }
+        #reportContent pre {
+            background-color: #f0fdfa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 0.875rem;
+            color: #0f766e;
+        }
+        #reportContent table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        #reportContent th, #reportContent td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #reportContent th {
+            background-color: #f0fdfa;
+            font-weight: bold;
+        }
+        .knowledge-table th, .knowledge-table td {
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .knowledge-table th {
+            background-color: #e0f2f1;
+            font-weight: 600;
+            color: #0f766e;
+            text-align: center;
+        }
+        .knowledge-table tr:nth-child(even) {
+            background-color: #f0fdfa;
+        }
+    </style>
+</head>
+<body>
+
+<div class="min-h-screen p-4 sm:p-6 lg:p-8 flex items-start justify-center">
+    <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6 sm:p-10 w-full">
+        
+        <header class="mb-8 border-b pb-4 text-center">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-primary mb-2">鋸片問題診斷與自我檢測</h1>
+            <p class="text-gray-600">請仔細填寫以下三區塊資訊，以生成詳細的初步診斷報告。</p>
+        </header>
+
+        <form id="sawbladeReportForm">
+            
+            <!-- 區塊一：客戶及公司資訊 -->
+            <div class="bg-gray-50 p-5 rounded-lg mb-8 shadow-inner">
+                <h2 class="text-xl font-bold mb-4 text-primary border-b pb-2">區塊一：客戶及聯繫資訊</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="companyName" class="block text-sm font-medium text-gray-700">公司名稱</label>
+                        <input type="text" id="companyName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border">
+                    </div>
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">聯絡人姓名 *</label>
+                        <input type="text" id="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="email" class="block text-sm font-medium text-gray-700">客戶信箱 (Email, 報告將用此信箱寄出) *</label>
+                        <input type="email" id="email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border" placeholder="請填寫有效信箱">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 區塊二：鋸片規格與問題描述 -->
+            <div class="bg-teal-50 p-5 rounded-lg mb-8 shadow-inner border border-teal-200">
+                <h2 class="text-xl font-bold mb-4 text-secondary border-b pb-2">區塊二：鋸片規格、參數與問題描述</h2>
+                
+                <!-- 鋸片規格 (5 欄: 外徑/切幅/齒數/內徑/齒型) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+                    <div>
+                        <label for="outerDia" class="block text-sm font-medium text-gray-700">2. 鋸片外徑 (mm) *</label>
+                        <input type="number" id="outerDia" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border" placeholder="例如：255">
+                    </div>
+                    <div>
+                        <label for="kerf" class="block text-sm font-medium text-gray-700">2. 齒厚/切幅 (mm) *</label>
+                        <input type="number" step="0.01" id="kerf" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border" placeholder="例如：3.2">
+                    </div>
+                    <div>
+                        <label for="toothCount" class="block text-sm font-medium text-gray-700">2. 齒數 (T) *</label>
+                        <input type="number" id="toothCount" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border" placeholder="例如：100">
+                    </div>
+                    <div>
+                        <label for="innerDia" class="block text-sm font-medium text-gray-700">鋸片內徑 (mm) *</label>
+                        <select id="innerDia" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border bg-white">
+                            <option value="">請選擇</option>
+                            <option value="19">19</option>
+                            <option value="25.4">25.4</option>
+                            <option value="30">30</option>
+                            <option value="50">50</option>
+                            <option value="其它">其它</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="currentToothProfile" class="block text-sm font-medium text-gray-700">目前使用齒型 *</label>
+                        <select id="currentToothProfile" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border bg-white">
+                            <option value="">請選擇</option>
+                            <option value="FT">平齒 (FT)</option>
+                            <option value="ATB">左右斜齒 (ATB)</option>
+                            <option value="TCG">梯形/平齒 (TCG)</option>
+                            <option value="CATB">複合斜齒 (CATB)</option>
+                            <option value="其他">其他/不知道</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 參數設定 (2 欄: 轉速/厚度) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="machineRPM" class="block text-sm font-medium text-gray-700">1. 機台轉速 (RPM) *</label>
+                        <input type="number" id="machineRPM" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border" placeholder="例如：3000">
+                    </div>
+                    <div>
+                        <label for="materialThickness" class="block text-sm font-medium text-gray-700">4. 切削物厚度 (mm) *</label>
+                        <input type="number" id="materialThickness" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border" placeholder="例如：10">
+                    </div>
+                </div>
+
+                <!-- 材質與工件形態 (2 欄) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="cuttingMaterial" class="block text-sm font-medium text-gray-700">3. 切削物種類 *</label>
+                        <select id="cuttingMaterial" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border bg-white">
+                            <option value="">請選擇</option>
+                            <option value="木頭">木頭</option>
+                            <option value="鋁合金">鋁合金</option>
+                            <option value="不鏽鋼/鐵">不鏽鋼/鐵</option>
+                            <option value="壓克力/塑膠">壓克力/塑膠</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="formFactor" class="block text-sm font-medium text-gray-700">5. 性質敘述 (工件形態) *</label>
+                        <select id="formFactor" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border bg-white">
+                            <option value="">請選擇</option>
+                            <option value="板">板 (Plate)</option>
+                            <option value="塊">塊 (Block)</option>
+                            <option value="管">管 (Tube)</option>
+                            <option value="條">條 (Bar/Solid Rod)</option>
+                            <option value="異型材">異型材 (Extrusion)</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 切割類型 & 品牌 (2 欄) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">6. 切割類型 *</label>
+                        <div class="flex space-x-4 bg-white p-2 rounded-md border">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="cutType" value="橫切" required class="form-radio text-primary">
+                                <span class="ml-2 text-gray-700">橫切 (Cross-cut)</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="cutType" value="縱切" class="form-radio text-primary">
+                                <span class="ml-2 text-gray-700">縱切 (Rip-cut)</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="cutType" value="兩者皆有" class="form-radio text-primary">
+                                <span class="ml-2 text-gray-700">兩者皆有</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="currentBrand" class="block text-sm font-medium text-gray-700">8. 目前使用品牌</label>
+                        <input type="text" id="currentBrand" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border" placeholder="例如：HAWER, 國外品牌, 無">
+                    </div>
+                </div>
+
+                <!-- 遇到的問題 (7) - 增加「其他」選項和輸入框 -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">7. 遇到的主要問題 (可複選) *</label>
+                    <div class="space-y-2 flex flex-wrap gap-x-6 bg-white p-3 rounded-md border">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" name="problem" value="壽命過短" class="form-checkbox text-red-600 rounded">
+                            <span class="ml-2 text-gray-700">壽命過短/磨損快</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" name="problem" value="利度不足" class="form-checkbox text-red-600 rounded">
+                            <span class="ml-2 text-gray-700">利度不足/進刀慢</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" name="problem" value="毛邊嚴重" class="form-checkbox text-red-600 rounded">
+                            <span class="ml-2 text-gray-700">毛邊嚴重</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" name="problem" value="鋸片沾黏/積屑" class="form-checkbox text-red-600 rounded">
+                            <span class="ml-2 text-gray-700">鋸片沾黏/積屑</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" name="problem" value="切割噪音過大" class="form-checkbox text-red-600 rounded">
+                            <span class="ml-2 text-gray-700">切割噪音過大</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" name="problem" value="切面歪斜" class="form-checkbox text-red-600 rounded">
+                            <span class="ml-2 text-gray-700">切面歪斜/不平整</span>
+                        </label>
+                         <!-- 新增：其他選項 -->
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" name="problem" value="其他" id="otherProblemCheckbox" class="form-checkbox text-red-600 rounded">
+                            <span class="ml-2 text-gray-700 font-bold text-red-600">其他 (請說明)</span>
+                        </label>
+                    </div>
+                    <!-- 新增：其他問題描述輸入框 -->
+                    <input type="text" id="customProblemDescription" placeholder="請在此輸入您遇到的其他問題..." class="mt-2 hidden w-full rounded-md border-gray-300 shadow-sm p-2.5 border transition duration-300" disabled>
+                    <input type="hidden" name="problemsCheck" required> 
+                </div>
+
+                <!-- 照片及影片連結 (2 欄) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="photoURL" class="block text-sm font-medium text-gray-700">切面/問題照片連結 (URL)</label>
+                        <input type="url" id="photoURL" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border" placeholder="例如：Google相簿或雲端連結 (可選填)">
+                    </div>
+                    <div>
+                        <label for="videoURL" class="block text-sm font-medium text-gray-700">切割影片連結 (URL)</label>
+                        <input type="url" id="videoURL" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2.5 border" placeholder="例如：Youtube或雲端連結 (可選填)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 鋸片齒型知識庫 (沿用) -->
+            <details class="mb-8 p-5 rounded-lg shadow-md border-2 border-primary/50 bg-primary/10">
+                <summary class="text-xl font-bold text-primary cursor-pointer py-2 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2h2a1 1 0 000-2H9z" clip-rule="evenodd" />
+                    </svg>
+                    鋸片齒型知識庫 (Tooth Profile Knowledge Base)
+                </summary>
+                <div class="mt-4 text-sm text-gray-700 overflow-x-auto">
+                    <p class="mb-3">鋸片刀頭的幾何形狀（齒型）決定了切削方式、排屑能力和切面品質，是選型評估的關鍵。</p>
+                    <table class="min-w-full divide-y divide-gray-300 knowledge-table">
+                        <thead>
+                            <tr>
+                                <th>齒型 (Abbr.)</th>
+                                <th>全名</th>
+                                <th>切削特性</th>
+                                <th>適用材料</th>
+                                <th>常見問題解決</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>**FT**</td>
+                                <td>平齒 (Flat Top)</td>
+                                <td>切削力道強，單齒負荷大，排屑空間大。</td>
+                                <td>縱切實木、低硬度金屬、開槽、粗切。</td>
+                                <td>解決**積屑、排屑不良**，但切面較粗糙。</td>
+                            </tr>
+                            <tr>
+                                <td>**ATB**</td>
+                                <td>左右斜齒 (Alternate Top Bevel)</td>
+                                <td>切削阻力小，切面光滑，鋒利度高。</td>
+                                <td>橫切木材、膠合板、一般人造板材。</td>
+                                <td>改善**橫切木材的毛邊**、提供**良好切面**。</td>
+                            </tr>
+                            <tr>
+                                <td>**TCG**</td>
+                                <td>梯形/平齒 (Triple Chip Grind)</td>
+                                <td>梯形齒負責粗切，後方平齒負責精修，耐磨損。</td>
+                                <td>**鋁合金、壓克力、塑膠、複合板材。**</td>
+                                <td>解決**非鐵金屬融化沾黏**、達到**鏡面**級切面。</td>
+                            </tr>
+                            <tr>
+                                <td>**CATB**</td>
+                                <td>複合斜齒 (Combination ATB)</td>
+                                <td>結合平齒與斜齒，萬用型，平衡切割速度與切面品質。</td>
+                                <td>橫切、縱切混合應用，高密度板材。</td>
+                                <td>追求**萬用鋸片**，但效果可能不如專用齒型。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+
+            <!-- 區塊三：使用狀態自我檢測 -->
+            <div class="p-5 rounded-lg mb-8 shadow-md border-2 border-accent/50 bg-accent/10">
+                <h2 class="text-xl font-bold mb-4 text-accent border-b pb-2 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-7-9a1 1 0 000 2h14a1 1 0 100-2H3z" clip-rule="evenodd" />
+                    </svg>
+                    區塊三：使用狀態自我檢測 (請務必確認) *
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-300">
+                        <thead class="bg-white/50">
+                            <tr>
+                                <th scope="col" class="px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-1/2">
+                                    檢測項目
+                                </th>
+                                <th scope="col" class="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    是
+                                </th>
+                                <th scope="col" class="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    否
+                                </th>
+                                <th scope="col" class="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    沒有這功能
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="selfCheckTbody">
+                            <!-- JS 動態生成項目 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        
+            <!-- 動作按鈕 -->
+            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                <button type="button" onclick="generateReport()" id="generateButton" class="flex-1 w-full sm:w-auto px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-md text-white bg-primary submit-btn hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:pointer-events-none">
+                    生成詳細報告 (含 AI 分析)
+                </button>
+                <span id="loadingIndicator" class="ml-4 text-secondary font-medium hidden flex items-center">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    AI 正在分析中... 請稍候...
+                </span>
+                <button type="button" onclick="sendEmail()" id="emailButton" class="flex-1 w-full sm:w-auto px-6 py-3 border border-primary text-base font-medium rounded-lg shadow-md text-primary bg-white hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition duration-150 ease-in-out disabled:opacity-50 disabled:pointer-events-none" disabled>
+                    寄送報告到公司信箱 (sales@hawer-knife.com)
+                </button>
+            </div>
+        </form>
+
+        <!-- 報告輸出區 -->
+        <div id="reportOutput" class="hidden mt-8 p-6 bg-gray-100 border border-gray-300 rounded-lg shadow-inner">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">生成的診斷報告 (含 AI 專業分析)</h2>
+            <div id="reportContent" class="text-sm text-gray-700 max-h-96 overflow-y-auto p-4 bg-white rounded-md border report-section">
+                <!-- 報告內容將顯示在這裡 (Markdown 渲染) -->
+            </div>
+            <p class="text-xs text-gray-500 mt-3 text-center">請點擊上方的「寄送報告到公司信箱」按鈕，將內容發送給相關人員或留底。</p>
+        </div>
+
+    </div>
+</div>
+
+<!-- 提示訊息 Modal -->
+<div id="modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+        <h3 id="modalTitle" class="text-lg font-bold text-gray-900 mb-3"></h3>
+        <p id="modalMessage" class="text-sm text-gray-600 mb-4"></p>
+        <button onclick="closeModal()" class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition">確認</button>
+    </div>
+</div>
+
+
+<script type="module">
+    // Firebase 模組載入 (保留標準初始化代碼)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // 全域變數初始化 (由 Canvas 環境提供)
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    let app;
+    let db;
+    let auth;
+    let userId = null;
+
+    // 提示訊息功能
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const otherProblemCheckbox = document.getElementById('otherProblemCheckbox');
+    const customProblemDescription = document.getElementById('customProblemDescription');
+    const generateButton = document.getElementById('generateButton');
+    const emailButton = document.getElementById('emailButton');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    
+    function openModal(title, message) {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        modal.classList.remove('hidden');
+    }
+
+    window.closeModal = function() {
+        modal.classList.add('hidden');
+    }
+    
+    // 初始化 Firebase 和驗證 
+    async function initializeFirebase() {
+        try {
+            if (Object.keys(firebaseConfig).length === 0) {
+                console.warn("Firebase config is empty. Skipping initialization.");
+                return;
+            }
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            setLogLevel('debug');
+
+            await new Promise(resolve => {
+                const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase Auth Ready. User ID:", userId);
+                    } else {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                    unsubscribe();
+                    resolve();
+                });
+            });
+
+        } catch (error) {
+            console.error("Firebase Initialization or Authentication Failed:", error);
+        }
+    }
+    
+    initializeFirebase();
+
+    // 鋸片專屬的自我檢測問題列表
+    const sawbladeSelfCheckQuestions = [
+        "切削油/冷卻液是否正常使用？ (若為乾切機則填 N/A)",
+        "工件二邊是否有穩固夾緊？",
+        "切削物是否與鋸片呈 90 度？",
+        "機台主軸、皮帶或夾具是否有鬆動/異常震動？",
+        "下刀前機台是否已達到穩定轉速？",
+        "鋸片是否有按照箭頭方向正確安裝？",
+        "是否已檢查機台進刀速度 (進給率) 過快？",
+        "排屑是否順暢？切屑顏色是否正常？"
+    ];
+
+    // 全域變數
+    window.generatedReport = "";
+    
+    /**
+     * 切換「其他問題」的輸入框顯示
+     */
+    function toggleCustomProblemInput() {
+        if (otherProblemCheckbox.checked) {
+            customProblemDescription.classList.remove('hidden');
+            customProblemDescription.disabled = false;
+            customProblemDescription.focus();
+        } else {
+            customProblemDescription.classList.add('hidden');
+            customProblemDescription.disabled = true;
+            customProblemDescription.value = '';
+        }
+    }
+    otherProblemCheckbox.addEventListener('change', toggleCustomProblemInput);
+
+
+    /**
+     * 鋸片醫學誌 (HAWER 專有知識庫精神模擬)
+     * 根據客戶回報的【症狀】，提供【原因】與【對策】
+     */
+    const medicalJournal = {
+        '壽命過短': { cause: '轉速/進給率不當，或夾持不穩。', solution: '檢查轉速是否匹配線速度，確保夾持穩定，考慮高硬度合金或塗層鋸片。', severity: '高風險' },
+        '利度不足': { cause: '刀具已磨損、齒型不適合或機台馬力不足。', solution: '確認是否需研磨，檢查前角是否符合材料特性，確保機台動力足夠。', severity: '中風險' },
+        '毛邊嚴重': { cause: 'T/t 比率過高（齒數太多）或齒型錯誤（應為 TCG）。', solution: '木材類用 ATB，鋁合金/塑膠務必用 TCG，並檢查 T/t 比率是否過高。', severity: '高風險' },
+        '鋸片沾黏/積屑': { cause: '排屑不良、線速度太低導致熔化，或切削油不足。', solution: '檢查切削液，使用 TCG 齒型，**強烈建議使用專用排屑槽形狀或不沾黏塗層**。', severity: '高風險' },
+        '切割噪音過大': { cause: '高頻振動、共振、機台或夾具震動。', solution: '考慮使用帶有【消音線或防震槽】設計的鋸片，檢查機台軸承是否平衡，調整轉速。', severity: '中風險' },
+        '切面歪斜': { cause: '鋸片跳動變形、主軸或法蘭鬆動，或進給力道不均。', solution: '檢查鋸片鋼板，測量主軸跳動量，確保工件完全固定。', severity: '中風險' }
+    };
+
+    /**
+     * Helper function to generate the initial structured report data (excluding AI analysis).
+     */
+    function generateReportData() {
+        const form = document.getElementById('sawbladeReportForm');
+        const date = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+
+        // 檢查問題選項
+        let problemElements = document.querySelectorAll('input[name="problem"]:checked');
+        let problemsArray = Array.from(problemElements).map(el => el.value);
+
+        // 處理「其他」選項
+        if (problemsArray.includes('其他')) {
+            const customProblem = customProblemDescription.value.trim();
+            if (customProblem) {
+                // 替換 '其他' 為具體描述
+                problemsArray = problemsArray.filter(p => p !== '其他');
+                problemsArray.push(`其他 (客戶描述: ${customProblem})`);
+            } else {
+                // 如果勾選了其他但未填寫，則視為未完成
+                customProblemDescription.classList.add('border-red-500');
+                throw new Error('您勾選了「其他」，請務必填寫遇到的問題描述。');
+            }
+        }
+        
+        document.querySelector('input[name="problemsCheck"]').required = problemsArray.length === 0;
+
+        // 檢查必填欄位 (這裡只做基礎檢查，詳細交給 isFormValid)
+        const formElements = form.elements;
+        
+        // 收集自我檢測結果
+        const selfCheckAnswers = [];
+        for (let i = 0; i < sawbladeSelfCheckQuestions.length; i++) {
+            const qId = `check_q${i + 1}`;
+            const selected = formElements[qId]?.value;
+            if (!selected) {
+                 throw new Error('請完成所有區塊三的自我檢測勾選。');
+            }
+            selfCheckAnswers.push({ question: sawbladeSelfCheckQuestions[i], answer: selected });
+        }
+        
+        const problems = problemsArray.join(', ') || '未選取問題';
+        
+        // 收集所有關鍵數據
+        const clientName = formElements['name'].value;
+        const companyName = formElements['companyName'].value || '未提供';
+        const clientEmail = formElements['email'].value;
+        const machineRPM = formElements['machineRPM'].value; // 1
+        const outerDia = formElements['outerDia'].value; // 2
+        const kerf = formElements['kerf'].value; // 2
+        const toothCount = formElements['toothCount'].value; // 2
+        const currentToothProfile = formElements['currentToothProfile'].value; // 齒型
+        const innerDia = formElements['innerDia'].value;
+        const cuttingMaterial = formElements['cuttingMaterial'].value; // 3
+        const materialThickness = formElements['materialThickness'].value; // 4
+        const formFactor = formElements['formFactor'].value; // 5
+        const cutType = formElements['cutType'].value; // 6
+        const currentBrand = formElements['currentBrand'].value || '未提供'; // 8
+        const photoURL = formElements['photoURL'].value || '無';
+        const videoURL = formElements['videoURL'].value || '無';
+        
+        
+        // 1. 報告頭部與客戶資訊 (Markdown 格式)
+        let reportText = `# 鋸片問題診斷報告 (初步評估)\n\n`;
+        reportText += `**生成時間：** ${date}\n\n`;
+        
+        reportText += `## 區塊一：客戶及聯繫資訊\n`;
+        reportText += `| 項目 | 內容 |\n`;
+        reportText += `| :--- | :--- |\n`;
+        reportText += `| **公司名稱** | ${companyName} |\n`;
+        reportText += `| **聯絡人** | ${clientName} |\n`;
+        reportText += `| **電子郵件** | ${clientEmail} |\n\n`;
+
+        // 2. 鋸片規格與問題 (依照 8 大要素排序)
+        reportText += `## 區塊二：鋸片規格、參數與問題描述 (8 大評估要素)\n`;
+        reportText += `| 項目 | 內容 |\n`;
+        reportText += `| :--- | :--- |\n`;
+        reportText += `| **1. 機台轉速** | ${machineRPM} RPM |\n`; 
+        reportText += `| **2. 鋸片規格** | 外徑 ${outerDia} mm × 齒厚 ${kerf} mm × 齒數 ${toothCount} T (內徑: ${innerDia} mm) |\n`;
+        reportText += `| **- 目前齒型** | ${currentToothProfile} |\n`;
+        reportText += `| **3. 切削物種類** | ${cuttingMaterial} |\n`;
+        reportText += `| **4. 切削物厚度** | ${materialThickness} mm |\n`; 
+        reportText += `| **5. 工件形態** | ${formFactor} |\n`; 
+        reportText += `| **6. 切割類型** | ${cutType} |\n`; 
+        reportText += `| **8. 目前使用品牌** | ${currentBrand} |\n`; 
+        reportText += `| **切面/問題照片** | ${photoURL} |\n`;
+        reportText += `| **切割影片** | ${videoURL} |\n\n`; 
+        
+        reportText += `| **7. 遇到的主要問題** | **${problems}** |\n\n`;
+
+        // 3. 自我檢測結果
+        reportText += `## 區塊三：使用狀態自我檢測結果\n`;
+        reportText += `| 項目 | 檢測結果 |\n`;
+        reportText += `| :--- | :---: |\n`;
+        selfCheckAnswers.forEach((item) => {
+             reportText += `| ${item.question} | **${item.answer}** |\n`;
+        });
+        reportText += `\n`;
+        
+        // 4. 初步診斷與建議 (系統自動生成，無 AI 參與的部分)
+        reportText += `## 鋸片醫學誌：故障排除與建議 (HAWER 知識庫)\n`;
+
+        if (problemsArray.length > 0) {
+            reportText += `針對您回報的症狀，提供【原因】與【建議對策】：\n\n`;
+            
+            reportText += `| 症狀 (Symptom) | 嚴重等級 | 主要原因 (Cause) | 建議對策 (Solution) |\n`;
+            reportText += `| :--- | :---: | :--- | :--- |\n`;
+            
+            problemsArray.forEach(problem => {
+                // 排除自訂的「其他」選項，只對標準症狀提供醫學誌診斷
+                const baseProblem = problem.includes('(客戶描述:') ? '其他' : problem;
+                const journalEntry = medicalJournal[baseProblem] || { cause: '客戶描述問題，無標準醫學誌條目。', solution: '需由工程師專業判斷。', severity: '未知' };
+                
+                // 為了讓表格美觀，將問題替換回原始的或簡化的
+                const displayProblem = problem.length > 30 ? problem.substring(0, 30) + '...' : problem;
+
+                reportText += `| **${displayProblem}** | **${journalEntry.severity}** | ${journalEntry.cause} | ${journalEntry.solution} |\n`;
+            });
+            reportText += "\n";
+            
+        } else {
+             reportText += "未選取遇到的問題，請回到區塊二勾選，以啟動醫學誌診斷。\n\n";
+        }
+        
+        // 返回包含所有數據的原始報告文字和問題陣列
+        return { reportText, problemsArray, clientEmail };
+    }
+
+    /**
+     * 呼叫 Gemini API 進行專業分析
+     */
+    async function getAIAnalysis(reportText) {
+        const apiKey = ""; // Canvas Runtime將自動提供API Key
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        // System prompt for the AI
+        const systemPrompt = "你是一位擁有超過30年經驗的專業鋸片應用工程師，專門為客戶提供精準的鋸片問題診斷和產品選型建議。請根據提供的鋸片診斷報告，進行簡潔、專業的總結與建議。輸出格式必須是Markdown，並包含以下兩個頂級標題：1. AI 專業總結 (總結問題點和風險)、2. 產品選型或優化建議 (提供具體操作或產品方向)。所有內容應使用繁體中文。請避免使用冗餘的開頭和結尾語句。";
+
+        const userQuery = `請分析以下客戶提供的鋸片診斷報告，並給予專業建議：\n\n${reportText}`;
+
+        const payload = {
+            contents: [{ parts: [{ text: userQuery }] }],
+            systemInstruction: {
+                parts: [{ text: systemPrompt }]
+            },
+        };
+
+        try {
+            // Implement simple retry with exponential backoff (e.g., 1s, 2s)
+            let response;
+            let result;
+            const maxRetries = 2;
+            let delay = 1000;
+
+            for (let i = 0; i < maxRetries; i++) {
+                response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                result = await response.json();
+                
+                if (response.ok && result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    return result.candidates[0].content.parts[0].text;
+                }
+                
+                if (i < maxRetries - 1) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // Exponential backoff
+                }
+            }
+
+            console.error("AI Response failed after retries:", result);
+            return "AI 專業分析失敗，請檢查 API 設置或稍後再試。";
+            
+        } catch (error) {
+            console.error("Error calling Gemini API:", error);
+            return `AI 服務呼叫失敗: ${error.message}`;
+        }
+    }
+
+
+    /**
+     * 核心功能：收集所有資訊並生成純文字報告
+     */
+    window.generateReport = async function() {
+        // UI 狀態：禁用按鈕，顯示載入中
+        generateButton.disabled = true;
+        emailButton.disabled = true;
+        loadingIndicator.classList.remove('hidden');
+
+        const reportOutput = document.getElementById('reportOutput');
+        const reportContent = document.getElementById('reportContent');
+        
+        try {
+            const { reportText: rawReportText, problemsArray, clientEmail } = generateReportData();
+            
+            // --- 呼叫 AI 進行分析 ---
+            const aiAnalysis = await getAIAnalysis(rawReportText);
+            
+            // --- 將 AI 分析結果加入報告 ---
+            let fullReportText = rawReportText;
+            fullReportText += `\n## AI 智慧診斷 (Gemini 專業工程師)\n`;
+            fullReportText += aiAnalysis;
+            fullReportText += `\n\n----\n`;
+            
+            // --- 總結建議 (非 AI 參與的部分) ---
+            let advice = "## 操作環境檢查總結與後續步驟\n";
+            const selfCheckAnswers = document.querySelectorAll('#selfCheckTbody input:checked');
+            const answers = Array.from(selfCheckAnswers).map(el => el.value);
+
+            if (answers.includes('否')) {
+                advice += "### 🔴 警告：操作設定存在問題\n";
+                advice += "根據您的自我檢測結果，部分關鍵操作（如工件夾緊、刀具方向、進給速度）可能未達標準。這是造成切割品質問題或刀具損壞的**最常見原因**。請優先檢查所有回答「否」的項目！\n\n";
+            } else if (answers.every(a => a === '是' || a === '沒有這功能')) {
+                advice += "### 🟢 操作環境標準\n";
+                advice += "您的操作環境似乎已達標。若切割品質仍不佳，問題很可能在於鋸片選型、齒型不對或機台的馬力與扭力不足。請將此報告發送給技術顧問進行專業選型檢查。\n\n";
+            }
+            
+            advice += `### ➡️ 下一步：寄送報告\n`;
+            advice += `請點擊上方的 **「寄送報告到公司信箱」** 按鈕，將此報告發送給 ${clientEmail} (客戶) 及 **sales@hawer-knife.com** (公司)。我們的技術顧問將會盡快與您聯繫！\n`;
+            
+            fullReportText += advice;
+            fullReportText += `\n==== 報告結束 ====\n`;
+            
+            
+            // 由於 reportContent 渲染 Markdown，我們直接將 Markdown 內容設置為 innerText
+            // 但為了方便複製到郵件，我們將 Markdown 也存到全域變數
+            window.generatedReport = fullReportText;
+            
+            // 簡易的 Markdown 轉 HTML 渲染 (僅用於顯示，郵件中仍傳送純 Markdown 文字)
+            reportContent.innerHTML = renderMarkdownToHtml(fullReportText);
+            
+            reportOutput.classList.remove('hidden');
+
+            openModal('報告生成成功', '診斷報告已在下方顯示，並包含了 AI 專業分析。您現在可以點擊「寄送報告到公司信箱」按鈕。');
+
+        } catch (error) {
+            console.error("生成報告失敗:", error);
+            openModal('生成報告失敗', error.message || '請檢查所有必填欄位是否已完成。');
+        } finally {
+            // UI 狀態：恢復按鈕，隱藏載入中
+            generateButton.disabled = false;
+            emailButton.disabled = window.generatedReport ? false : true;
+            loadingIndicator.classList.add('hidden');
+        }
+    };
+    
+    /**
+     * 簡易 Markdown 轉換為 HTML (僅用於美觀顯示在預覽區)
+     */
+    function renderMarkdownToHtml(markdown) {
+        let html = markdown
+            .replace(/^#\s+(.*)$/gm, '<h1>$1</h1>')
+            .replace(/^##\s+(.*)$/gm, '<h2>$1</h2>')
+            .replace(/^###\s+(.*)$/gm, '<h3>$1</h3>')
+            .replace(/\|([^|]*)\|([^|]*)\|/g, (match, p1, p2) => `<tr><td>${p1.trim()}</td><td>${p2.trim()}</td></tr>`) // Simple table row conversion
+            .replace(/^- (.*)$/gm, '<li>$1</li>')
+            .replace(/^(<li>.*<\/li>)$/gms, '<ul>$1</ul>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+        // 處理表格頭
+        html = html.replace(/\|(.*)\|/g, (match) => {
+            if (match.includes(':---') || match.includes(':---:')) return ''; // Remove separator lines
+            if (match.includes('項目') || match.includes('症狀')) {
+                return match.replace(/\|([^|]*)\|/g, (m, p) => `<th>${p.trim()}</th>`).replace('<th>', '<thead><tr>').replace(/<\/th>$/, '</th></tr></thead><tbody>');
+            }
+            return match;
+        });
+        
+        // Final table wrapping (crude but functional)
+        if (html.includes('<thead>')) {
+            html = '<table>' + html + '</tbody></table>';
+        }
+        
+        // 確保所有換行符號都被 <br> 取代，除非它們在特定塊中
+        html = html.split('\n').map(line => {
+            if (line.match(/<h[123]>/) || line.match(/<ul/) || line.match(/<table/)) {
+                return line;
+            }
+            return line.trim().length > 0 ? line : '<br>';
+        }).join('');
+        
+        return html;
+    }
+
+
+    /**
+     * 核心功能：寄送報告到公司信箱
+     */
+    window.sendEmail = function() {
+        if (!window.generatedReport) {
+            openModal('操作失敗', '請先生成報告後再嘗試寄送。');
+            return;
+        }
+
+        const clientEmail = document.getElementById('email').value;
+        const companyName = document.getElementById('companyName').value || '未署名客戶';
+
+        // 設定收件人為公司信箱
+        const recipient = 'sales@hawer-knife.com'; 
+        
+        // 設定主旨
+        const subject = encodeURIComponent(`【新鋸片診斷報告】待處理 - 客戶: ${companyName} (${clientEmail})`);
+        
+        // 在報告內容前加上客戶信箱，方便回覆
+        const reportBodyWithClientInfo = `【此報告由客戶填寫，請優先處理】\n客戶聯絡信箱: ${clientEmail}\n-----------------------------------\n\n${window.generatedReport}`;
+        const body = encodeURIComponent(reportBodyWithClientInfo);
+        
+        // 構建 mailto 連結
+        // 將客戶信箱放在 cc 或 reply-to，這裡選擇在 body 中強調，並讓客戶知道信件會寄給公司
+        const mailtoLink = `mailto:${recipient}?subject=${subject}&body=${body}`;
+        
+        try {
+            window.location.href = mailtoLink;
+        } catch (e) {
+            console.error("無法開啟 mailto 連結:", e);
+            openModal('寄信失敗', '無法開啟郵件客戶端。請檢查您的瀏覽器設定，或手動複製下方報告內容進行寄送。');
+            return;
+        }
+        
+        openModal('正在開啟郵件客戶端', `報告已準備好，收件人已設定為 **${recipient}**。請確認內容並發送。`);
+    };
+    
+    // 初始化自我檢測表格
+    function initializeSelfCheckTable() {
+        const tbody = document.getElementById('selfCheckTbody');
+        tbody.innerHTML = ''; 
+        
+        sawbladeSelfCheckQuestions.forEach((q, index) => {
+            const qId = `check_q${index + 1}`;
+            const row = document.createElement('tr');
+            row.className = index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100';
+            
+            row.innerHTML = `
+                <td class="px-3 py-3 text-sm font-medium text-gray-900">${index + 1}. ${q}</td>
+                ${['是', '否', '沒有這功能'].map((label, i) => `
+                    <td class="px-2 py-3 text-sm text-gray-500 text-center">
+                        <input type="radio" id="${qId}_${i}" name="${qId}" value="${label}" class="h-4 w-4 text-primary border-gray-300 focus:ring-secondary" required>
+                        <label for="${qId}_${i}" class="sr-only">${label}</label>
+                    </td>
+                `).join('')}
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initializeSelfCheckTable);
+    
+</script>
+
+</body>
+</html>
