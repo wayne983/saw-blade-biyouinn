@@ -98,7 +98,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;back
     <button class="refresh-btn" onclick="renderResults()">🔄 重新整理</button>
     <div class="stats-row">
       <div class="stat-card"><div class="stat-val" id="s-voters">0</div><div class="stat-lbl">投票人次</div></div>
-      <div class="stat-card"><div class="stat-val">13</div><div class="stat-lbl">參賽曲目</div></div>
+      <div class="stat-card"><div class="stat-val">15</div><div class="stat-lbl">參賽曲目</div></div>
       <div class="stat-card"><div class="stat-val">6</div><div class="stat-lbl">獎項數</div></div>
     </div>
     <div id="results-container"></div>
@@ -120,17 +120,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;back
 const songs = [
   {id:1, title:"什麼都不必說", singer:"全修"},
   {id:2, title:"大約在冬季", singer:"俊凱"},
-  {id:3, title:"鹿港小鎮", singer:"思緯", collab:"徵求合唱"},
-  {id:4, title:"歡喜就好", singer:"忠誠"},
+  {id:3, title:"鹿港小鎮", singer:"思緯＋坤圻"},
+  {id:4, title:"歡喜就好", singer:"忠誠＋誌剛"},
   {id:5, title:"你是我的花朵", singer:"彩玲＋鵝子"},
   {id:6, title:"愛拼才會贏", singer:"富絨"},
   {id:7, title:"我只在乎你", singer:"Dr. Lisa"},
   {id:8, title:"珊瑚海", singer:"", collab:"求合唱"},
   {id:9, title:"雪中紅", singer:""},
   {id:10, title:"瀟灑走一回", singer:""},
-  {id:11, title:"青蘋果樂園", singer:"", collab:"求合唱"},
+  {id:11, title:"青蘋果樂園", singer:"胖虎隊"},
   {id:12, title:"腳踏車", singer:"景荐"},
   {id:13, title:"望月想愛人", singer:"盈仲"},
+  {id:14, title:"一場遊戲一場夢", singer:"鶯騰"},
+  {id:15, title:"海闊天空", singer:"曉盈＋老公"},
 ];
 
 const awards = [
