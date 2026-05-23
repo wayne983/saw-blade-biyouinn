@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雲華好聲音 · 不計名投票</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;background:#f5f4fc;color:#1a1a2e;min-height:100vh;}
+.container{max-width:480px;margin:0 auto;background:#fff;min-height:100vh;display:flex;flex-direction:column;}
+.hdr{text-align:center;padding:1.2rem 1rem 0.8rem;background:#EEEDFE;border-bottom:1px solid #CCC9F8;}
+.hdr h1{font-size:20px;font-weight:600;color:#3C3489;}
+.hdr p{font-size:13px;color:#534AB7;margin-top:3px;}
+.tabs{display:flex;background:#f5f4fc;border-bottom:1px solid #CCC9F8;}
+.tab{flex:1;padding:11px 4px;text-align:center;font-size:13px;cursor:pointer;color:#888;border-bottom:2px solid transparent;}
+.tab.active{color:#3C3489;font-weight:600;border-bottom:2px solid #7F77DD;background:#fff;}
+.panel{display:none;padding:1rem;flex:1;}
+.panel.active{display:block;}
+
+.intro-card{background:#EEEDFE;border-radius:12px;padding:12px 14px;margin-bottom:1rem;font-size:13px;color:#3C3489;line-height:1.6;}
+.progress-label{font-size:12px;color:#888;margin-bottom:6px;}
+.progress-bar-outer{height:5px;background:#e8e8f0;border-radius:3px;margin-bottom:1rem;overflow:hidden;}
+.progress-bar-inner{height:100%;background:#7F77DD;border-radius:3px;transition:width 0.3s;}
+
+.award-section{margin-bottom:0.8rem;}
+.award-title-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.award-emoji{font-size:18px;}
+.award-name{font-size:14px;font-weight:600;color:#1a1a2e;}
+.award-desc{font-size:11px;color:#888;}
+.songs-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.song-card{background:#fafafa;border:1px solid #e0dff5;border-radius:10px;padding:9px 10px;cursor:pointer;transition:all 0.15s;position:relative;}
+.song-card:active{transform:scale(0.97);}
+.song-card.selected{background:#7F77DD;border-color:#534AB7;}
+.song-card.selected .song-num,.song-card.selected .song-singer{color:#CCC9F8;}
+.song-card.selected .song-title{color:#fff;}
+.song-num{font-size:10px;color:#aaa;margin-bottom:1px;}
+.song-title{font-size:13px;font-weight:600;color:#1a1a2e;line-height:1.4;}
+.song-singer{font-size:11px;color:#888;margin-top:2px;}
+.collab-tag{font-size:10px;background:#FAC775;color:#633806;padding:1px 5px;border-radius:10px;display:inline-block;margin-top:2px;}
+.song-card.selected .collab-tag{background:#AFA9EC;color:#26215C;}
+.check-mark{position:absolute;top:6px;right:8px;font-size:14px;color:#fff;display:none;}
+.song-card.selected .check-mark{display:block;}
+.divider{height:1px;background:#f0eff8;margin:0.8rem 0;}
+
+.submit-btn{width:100%;padding:14px;background:#7F77DD;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;margin-top:0.5rem;letter-spacing:0.02em;}
+.submit-btn:disabled{background:#e0dff5;color:#aaa;cursor:not-allowed;}
+
+.done-screen{text-align:center;padding:3rem 1rem;}
+.done-icon{font-size:56px;margin-bottom:1rem;}
+.done-title{font-size:20px;font-weight:600;color:#3C3489;margin-bottom:8px;}
+.done-sub{font-size:14px;color:#888;line-height:1.7;}
+.vote-again-btn{margin-top:1.5rem;padding:10px 28px;background:#f5f4fc;border:1px solid #CCC9F8;border-radius:10px;font-size:14px;cursor:pointer;color:#534AB7;}
+
+.stats-row{display:flex;gap:8px;margin-bottom:1rem;}
+.stat-card{flex:1;background:#f5f4fc;border-radius:10px;padding:10px;text-align:center;}
+.stat-val{font-size:24px;font-weight:600;color:#3C3489;}
+.stat-lbl{font-size:11px;color:#888;margin-top:2px;}
+.refresh-btn{width:100%;padding:10px;background:#f5f4fc;border:1px solid #e0dff5;border-radius:10px;font-size:13px;color:#534AB7;cursor:pointer;margin-bottom:1rem;font-weight:500;}
+
+.result-award{margin-bottom:1.2rem;}
+.result-award-title{font-size:13px;font-weight:600;color:#534AB7;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.result-row{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#fafafa;border:1px solid #e8e8f0;border-radius:10px;margin-bottom:5px;}
+.result-row.top1{background:#EEEDFE;border-color:#AFA9EC;}
+.result-rank{font-size:16px;width:26px;flex-shrink:0;text-align:center;}
+.result-song{flex:1;}
+.result-song-title{font-size:13px;font-weight:600;color:#1a1a2e;}
+.result-song-singer{font-size:11px;color:#888;}
+.result-bar-wrap{width:60px;height:6px;background:#e8e8f0;border-radius:3px;overflow:hidden;}
+.result-bar{height:100%;background:#AFA9EC;border-radius:3px;}
+.result-votes{font-size:14px;font-weight:600;color:#534AB7;min-width:28px;text-align:right;}
+.no-data{font-size:13px;color:#aaa;text-align:center;padding:1.5rem 0;}
+
+.qr-wrap{text-align:center;padding:1rem 0.5rem;}
+.qr-box{background:white;display:inline-block;padding:16px;border-radius:14px;border:1px solid #e0dff5;margin:0.8rem 0;}
+.qr-url{font-size:11px;color:#aaa;word-break:break-all;max-width:300px;margin:0 auto;}
+.copy-btn{padding:10px 24px;background:#f5f4fc;border:1px solid #CCC9F8;border-radius:10px;font-size:14px;cursor:pointer;color:#534AB7;font-weight:500;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="hdr">
+    <h1>🎤 雲華好聲音</h1>
+    <p>不計名投票 · 每項選一首您最喜歡的</p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('vote',this)">🗳️ 投票</div>
+    <div class="tab" onclick="switchTab('result',this)">📊 即時結果</div>
+    <div class="tab" onclick="switchTab('qr',this)">📱 QR Code</div>
+  </div>
+
+  <div id="panel-vote" class="panel active">
+    <div id="vote-main"></div>
+  </div>
+
+  <div id="panel-result" class="panel">
+    <button class="refresh-btn" onclick="renderResults()">🔄 重新整理</button>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val" id="s-voters">0</div><div class="stat-lbl">投票人次</div></div>
+      <div class="stat-card"><div class="stat-val">13</div><div class="stat-lbl">參賽曲目</div></div>
+      <div class="stat-card"><div class="stat-val">6</div><div class="stat-lbl">獎項數</div></div>
+    </div>
+    <div id="results-container"></div>
+  </div>
+
+  <div id="panel-qr" class="panel">
+    <div class="qr-wrap">
+      <p style="font-size:14px;color:#888;">掃描 QR Code 開始投票</p>
+      <div class="qr-box" id="qrContainer"></div>
+      <div class="qr-url" id="qrUrl"></div>
+      <br>
+      <button class="copy-btn" onclick="copyUrl()">📋 複製連結</button>
+      <p style="font-size:12px;color:#aaa;margin-top:1rem;line-height:1.6;">所有出席賓客皆可掃碼<br>匿名投票，不記名</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const songs = [
+  {id:1, title:"什麼都不必說", singer:"全修"},
+  {id:2, title:"大約在冬季", singer:"俊凱"},
+  {id:3, title:"鹿港小鎮", singer:"思緯", collab:"徵求合唱"},
+  {id:4, title:"歡喜就好", singer:"忠誠"},
+  {id:5, title:"你是我的花朵", singer:"彩玲＋鵝子"},
+  {id:6, title:"愛拼才會贏", singer:"富絨"},
+  {id:7, title:"我只在乎你", singer:"Dr. Lisa"},
+  {id:8, title:"珊瑚海", singer:"", collab:"求合唱"},
+  {id:9, title:"雪中紅", singer:""},
+  {id:10, title:"瀟灑走一回", singer:""},
+  {id:11, title:"青蘋果樂園", singer:"", collab:"求合唱"},
+  {id:12, title:"腳踏車", singer:"景荐"},
+  {id:13, title:"望月想愛人", singer:"盈仲"},
+];
+
+const awards = [
+  {id:"mvp",    emoji:"🏆", name:"雲華之聲 MVP",    desc:"整體最佳演出"},
+  {id:"style",  emoji:"👗", name:"最佳造型獎",       desc:"最吸睛的造型"},
+  {id:"perf",   emoji:"🎭", name:"最佳表演獎",       desc:"最投入的演出"},
+  {id:"offkey", emoji:"🎵", name:"最佳走音獎",       desc:"最歡樂的走音"},
+  {id:"duo",    emoji:"🤝", name:"最佳默契拍檔獎",   desc:"最有默契的合唱"},
+  {id:"pop",    emoji:"⭐", name:"最高人氣獎",       desc:"全場最受歡迎"},
+];
+
+const SKEY = 'yunhua_anon_votes_2026';
+let myVotes = {};
+
+function getVotes(){try{const d=localStorage.getItem(SKEY);return d?JSON.parse(d):{ballots:[]}}catch(e){return{ballots:[]}}}
+
+function renderVoting(){
+  const done = Object.keys(myVotes).length;
+  const total = awards.length;
+  const pct = Math.round(done/total*100);
+
+  let html = `<div class="intro-card">🔒 本投票不記名，選完後按送出即完成，感謝參與！</div>
+  <div class="progress-label">已完成 ${done} / ${total} 個獎項</div>
+  <div class="progress-bar-outer"><div class="progress-bar-inner" style="width:${pct}%"></div></div>`;
+
+  awards.forEach(aw => {
+    const chosen = myVotes[aw.id] || null;
+    html += `<div class="award-section">
+      <div class="award-title-row">
+        <span class="award-emoji">${aw.emoji}</span>
+        <div><div class="award-name">${aw.name}</div><div class="award-desc">${aw.desc}</div></div>
+      </div>
+      <div class="songs-grid">`;
+    songs.forEach(s => {
+      const sel = chosen === s.id;
+      html += `<div class="song-card${sel?' selected':''}" onclick="toggleSong('${aw.id}',${s.id})">
+        <span class="check-mark">✓</span>
+        <div class="song-num">No.${s.id}</div>
+        <div class="song-title">${s.title}</div>
+        <div class="song-singer">${s.singer||'<span style="color:#ccc">待定</span>'}</div>
+        ${s.collab?`<span class="collab-tag">🎙 ${s.collab}</span>`:''}
+      </div>`;
+    });
+    html += `</div></div><div class="divider"></div>`;
+  });
+
+  html += `<button class="submit-btn" onclick="submitVote()" ${done===0?'disabled':''}>
+    ${done>0?`✅ 送出投票（已選 ${done}/${total} 項）`:'請先選擇至少一個獎項'}
+  </button><br><br>`;
+
+  document.getElementById('vote-main').innerHTML = html;
+}
+
+function renderDone(){
+  document.getElementById('vote-main').innerHTML = `
+    <div class="done-screen">
+      <div class="done-icon">🎉</div>
+      <div class="done-title">感謝您的投票！</div>
+      <div class="done-sub">您的票已匿名送出<br>請切換到「即時結果」查看目前票數</div>
+      <button class="vote-again-btn" onclick="resetVote()">↩ 重新投票</button>
+    </div>`;
+}
+
+function toggleSong(awardId, songId){
+  if(myVotes[awardId]===songId){ delete myVotes[awardId]; }
+  else { myVotes[awardId]=songId; }
+  renderVoting();
+}
+
+function submitVote(){
+  if(Object.keys(myVotes).length===0) return;
+  const data = getVotes();
+  data.ballots.push({...myVotes, ts: Date.now()});
+  try{localStorage.setItem(SKEY, JSON.stringify(data));}catch(e){}
+  myVotes = {};
+  renderDone();
+}
+
+function resetVote(){
+  myVotes = {};
+  renderVoting();
+}
+
+function renderResults(){
+  const data = getVotes();
+  const ballots = data.ballots||[];
+  document.getElementById('s-voters').textContent = ballots.length;
+  if(ballots.length===0){
+    document.getElementById('results-container').innerHTML='<div class="no-data">尚無投票資料</div>';
+    return;
+  }
+  let html='';
+  awards.forEach(aw=>{
+    const tally={};
+    ballots.forEach(b=>{const sid=b[aw.id];if(sid!=null)tally[sid]=(tally[sid]||0)+1;});
+    const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
+    const maxV=sorted.length>0?sorted[0][1]:1;
+    html+=`<div class="result-award"><div class="result-award-title">${aw.emoji} ${aw.name}</div>`;
+    if(sorted.length===0){html+=`<div class="no-data" style="padding:0.5rem 0">尚無票數</div>`;}
+    else{
+      sorted.forEach((entry,i)=>{
+        const s=songs.find(x=>x.id===parseInt(entry[0]));if(!s)return;
+        const pct=Math.round(entry[1]/maxV*100);
+        html+=`<div class="result-row${i===0?' top1':''}">
+          <div class="result-rank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`}</div>
+          <div class="result-song">
+            <div class="result-song-title">${s.title}</div>
+            <div class="result-song-singer">${s.singer||'演唱者待定'}</div>
+          </div>
+          <div class="result-bar-wrap"><div class="result-bar" style="width:${pct}%"></div></div>
+          <div class="result-votes">${entry[1]}票</div>
+        </div>`;
+      });
+    }
+    html+=`</div><div class="divider"></div>`;
+  });
+  document.getElementById('results-container').innerHTML=html;
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='result') renderResults();
+  if(name==='qr') renderQR();
+}
+
+function renderQR(){
+  const url=window.location.href;
+  document.getElementById('qrUrl').textContent=url;
+  const c=document.getElementById('qrContainer');
+  c.innerHTML='';
+  try{new QRCode(c,{text:url,width:200,height:200,colorDark:"#3C3489",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});}catch(e){}
+}
+
+function copyUrl(){
+  navigator.clipboard.writeText(window.location.href)
+    .then(()=>alert('連結已複製！'))
+    .catch(()=>prompt('請手動複製：',window.location.href));
+}
+
+renderVoting();
+</script>
+</body>
+</html>
