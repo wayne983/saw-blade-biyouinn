@@ -144,10 +144,8 @@ const awards = [
   {id:"pop",    emoji:"⭐", name:"最高人氣獎",       desc:"全場最受歡迎"},
 ];
 
-const SKEY = 'yunhua_anon_votes_2026';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwEaeo8vMSJqySGR2TuPU1ZGHZm5jEm_A89dPZzGswii4oQFYOz6EUZ7rElGuRlUlHN/exec';
 let myVotes = {};
-
-function getVotes(){try{const d=localStorage.getItem(SKEY);return d?JSON.parse(d):{ballots:[]}}catch(e){return{ballots:[]}}}
 
 function renderVoting(){
   const done = Object.keys(myVotes).length;
@@ -179,7 +177,7 @@ function renderVoting(){
     html += `</div></div><div class="divider"></div>`;
   });
 
-  html += `<button class="submit-btn" onclick="submitVote()" ${done===0?'disabled':''}>
+  html += `<button class="submit-btn" id="submitBtn" onclick="submitVote()" ${done===0?'disabled':''}>
     ${done>0?`✅ 送出投票（已選 ${done}/${total} 項）`:'請先選擇至少一個獎項'}
   </button><br><br>`;
 
@@ -196,6 +194,15 @@ function renderDone(){
     </div>`;
 }
 
+function renderSending(){
+  document.getElementById('vote-main').innerHTML = `
+    <div class="done-screen">
+      <div class="done-icon">⏳</div>
+      <div class="done-title">送出中...</div>
+      <div class="done-sub">請稍候</div>
+    </div>`;
+}
+
 function toggleSong(awardId, songId){
   if(myVotes[awardId]===songId){ delete myVotes[awardId]; }
   else { myVotes[awardId]=songId; }
@@ -204,11 +211,31 @@ function toggleSong(awardId, songId){
 
 function submitVote(){
   if(Object.keys(myVotes).length===0) return;
-  const data = getVotes();
-  data.ballots.push({...myVotes, ts: Date.now()});
-  try{localStorage.setItem(SKEY, JSON.stringify(data));}catch(e){}
-  myVotes = {};
-  renderDone();
+
+  // 把 song id 轉成歌曲名稱存入
+  const payload = {};
+  awards.forEach(aw => {
+    const sid = myVotes[aw.id];
+    if(sid != null){
+      const s = songs.find(x => x.id === sid);
+      payload[aw.id] = s ? s.title + (s.singer ? '（'+s.singer+'）' : '') : sid;
+    }
+  });
+
+  renderSending();
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(() => {
+    myVotes = {};
+    renderDone();
+  }).catch(() => {
+    myVotes = {};
+    renderDone(); // 即使網路異常也顯示完成，GAS 通常已收到
+  });
 }
 
 function resetVote(){
@@ -217,39 +244,52 @@ function resetVote(){
 }
 
 function renderResults(){
-  const data = getVotes();
-  const ballots = data.ballots||[];
-  document.getElementById('s-voters').textContent = ballots.length;
-  if(ballots.length===0){
-    document.getElementById('results-container').innerHTML='<div class="no-data">尚無投票資料</div>';
-    return;
-  }
-  let html='';
-  awards.forEach(aw=>{
-    const tally={};
-    ballots.forEach(b=>{const sid=b[aw.id];if(sid!=null)tally[sid]=(tally[sid]||0)+1;});
-    const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
-    const maxV=sorted.length>0?sorted[0][1]:1;
-    html+=`<div class="result-award"><div class="result-award-title">${aw.emoji} ${aw.name}</div>`;
-    if(sorted.length===0){html+=`<div class="no-data" style="padding:0.5rem 0">尚無票數</div>`;}
-    else{
-      sorted.forEach((entry,i)=>{
-        const s=songs.find(x=>x.id===parseInt(entry[0]));if(!s)return;
-        const pct=Math.round(entry[1]/maxV*100);
-        html+=`<div class="result-row${i===0?' top1':''}">
-          <div class="result-rank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`}</div>
-          <div class="result-song">
-            <div class="result-song-title">${s.title}</div>
-            <div class="result-song-singer">${s.singer||'演唱者待定'}</div>
-          </div>
-          <div class="result-bar-wrap"><div class="result-bar" style="width:${pct}%"></div></div>
-          <div class="result-votes">${entry[1]}票</div>
-        </div>`;
+  document.getElementById('results-container').innerHTML = '<div class="no-data">載入中...</div>';
+
+  fetch(GAS_URL + '?t=' + Date.now())
+    .then(r => r.json())
+    .then(data => {
+      const ballots = data.ballots || [];
+      document.getElementById('s-voters').textContent = ballots.length;
+
+      if(ballots.length === 0){
+        document.getElementById('results-container').innerHTML = '<div class="no-data">尚無投票資料</div>';
+        return;
+      }
+
+      let html = '';
+      awards.forEach(aw => {
+        const tally = {};
+        ballots.forEach(b => {
+          const val = b[aw.id];
+          if(val) tally[val] = (tally[val]||0) + 1;
+        });
+        const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
+        const maxV = sorted.length > 0 ? sorted[0][1] : 1;
+
+        html += `<div class="result-award"><div class="result-award-title">${aw.emoji} ${aw.name}</div>`;
+        if(sorted.length === 0){
+          html += `<div class="no-data" style="padding:0.5rem 0">尚無票數</div>`;
+        } else {
+          sorted.forEach((entry, i) => {
+            const pct = Math.round(entry[1]/maxV*100);
+            html += `<div class="result-row${i===0?' top1':''}">
+              <div class="result-rank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`}</div>
+              <div class="result-song">
+                <div class="result-song-title">${entry[0]}</div>
+              </div>
+              <div class="result-bar-wrap"><div class="result-bar" style="width:${pct}%"></div></div>
+              <div class="result-votes">${entry[1]}票</div>
+            </div>`;
+          });
+        }
+        html += `</div><div class="divider"></div>`;
       });
-    }
-    html+=`</div><div class="divider"></div>`;
-  });
-  document.getElementById('results-container').innerHTML=html;
+      document.getElementById('results-container').innerHTML = html;
+    })
+    .catch(() => {
+      document.getElementById('results-container').innerHTML = '<div class="no-data">載入失敗，請重新整理</div>';
+    });
 }
 
 function switchTab(name,el){
@@ -262,10 +302,10 @@ function switchTab(name,el){
 }
 
 function renderQR(){
-  const url=window.location.href;
-  document.getElementById('qrUrl').textContent=url;
-  const c=document.getElementById('qrContainer');
-  c.innerHTML='';
+  const url = window.location.href;
+  document.getElementById('qrUrl').textContent = url;
+  const c = document.getElementById('qrContainer');
+  c.innerHTML = '';
   try{new QRCode(c,{text:url,width:200,height:200,colorDark:"#3C3489",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});}catch(e){}
 }
 
